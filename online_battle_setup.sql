@@ -61,7 +61,7 @@ begin
   end if;
   insert into public.online_battle_members(battle_id,user_id,player_name,character,hp,max_hp)
   values(v_battle.id,v_uid,left(coalesce(nullif(p_player_name,''),'冒険者'),24),coalesce(p_character,'{}'::jsonb),
-         greatest(1,coalesce((p_character->>'maxHp')::numeric,1)),
+         greatest(0,coalesce((p_character->>'hp')::numeric,1)),
          greatest(1,coalesce((p_character->>'maxHp')::numeric,1)))
   on conflict (battle_id,user_id) do update
     set left_at=null, player_name=excluded.player_name, character=excluded.character;
