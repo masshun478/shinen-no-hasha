@@ -113,17 +113,15 @@ const platform=add(new THREE.TorusGeometry(1.02,.045,12,56),trim,0,.06,0,1,1,.48
  // Verified CC0 1.0 GLB URLs from Gobkit's curated library.
  // Keep the procedural model visible until a real asset has loaded successfully.
  const glbByKind={
-  dragon:"https://gobkit.com/freebies/dino/Trex.glb",
-  beast:"https://gobkit.com/freebies/human011/WerewolfCaptain.glb",
-  ghost:"https://gobkit.com/freebies/human011/SheetGhost.glb",
-  knight:"https://gobkit.com/freebies/human010/BloodironKnight.glb",
-  demon:"https://gobkit.com/freebies/human011/VampireCountess.glb",
-  mage:"https://gobkit.com/freebies/human011/NightWitch.glb",
-  undead:"https://gobkit.com/freebies/human011/TombMummy.glb",
-  golem:"https://gobkit.com/freebies/human011/StitchedBrute.glb",
-  insect:"https://gobkit.com/freebies/insect001/Scorpion.glb",
-  bird:"https://gobkit.com/freebies/birds/Eagle.glb",
-  serpent:"https://gobkit.com/freebies/animal012/Chimaera.glb"
+  // Published Gobkit community GLBs: CC0, direct .glb URLs, named idle/move/attack clips.
+  dragon:"https://gobkit.com/api/community/file/9tx8dw8ekt6a/model",
+  beast:"https://gobkit.com/api/community/file/nfc4njn6w5zq/model",
+  knight:"https://gobkit.com/api/community/file/mhhai2gmnwin/model",
+  demon:"https://gobkit.com/api/community/file/gyn4rhpenihc/model",
+  golem:"https://gobkit.com/api/community/file/ihwsmh7fgrix/model",
+  insect:"https://gobkit.com/api/community/file/w637mbvvd3ah/model",
+  bird:"https://gobkit.com/api/community/file/znzn64bqypck/model",
+  serpent:"https://gobkit.com/api/community/file/ys9p6t944ig8/model"
  };
  const glbUrl=glbByKind[kind];
  if(glbUrl&&window.GLTFLoader){
