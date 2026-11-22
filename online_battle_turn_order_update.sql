@@ -183,3 +183,26 @@ end $$;
 
 grant execute on function public.poll_online_battle(uuid) to authenticated;
 grant execute on function public.online_battle_action(uuid,numeric,numeric) to authenticated;
+
+
+-- Prevent one account from joining multiple unfinished online battles.
+-- Resolve pre-existing duplicate active memberships before creating the index.
+with ranked_members as (
+  select ctid,
+         row_number() over (
+           partition by user_id
+           order by joined_at desc, battle_id desc
+         ) as rn
+    from public.online_battle_members
+   where left_at is null
+)
+update public.online_battle_members m
+   set left_at = now()
+  from ranked_members r
+ where m.ctid = r.ctid
+   and r.rn > 1;
+
+create unique index if not exists online_battle_one_active_room_per_user_idx
+  on public.online_battle_members (user_id)
+  where left_at is null;
+
