@@ -393,3 +393,50 @@ begin
   return jsonb_build_object('battle',to_jsonb(v_battle),'count',v_count);
 end $$;
 grant execute on function public.join_online_battle(text,text,jsonb) to authenticated;
+
+
+-- Idempotent per-player reward claim for completed online battles.
+create table if not exists public.online_battle_reward_claims (
+  battle_id uuid not null references public.online_battles(id) on delete cascade,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  claimed_at timestamptz not null default now(),
+  primary key (battle_id,user_id)
+);
+alter table public.online_battle_reward_claims enable row level security;
+revoke all on public.online_battle_reward_claims from anon, authenticated;
+
+create or replace function public.claim_online_battle_reward(p_battle_id uuid)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_battle public.online_battles%rowtype;
+  v_claimed uuid;
+begin
+  if v_uid is null then raise exception 'ログインが必要です'; end if;
+  select * into v_battle from public.online_battles where id=p_battle_id for update;
+  if not found or v_battle.status <> 'won' then
+    raise exception '勝利が確定していない戦闘です';
+  end if;
+  if not exists (
+    select 1 from public.online_battle_members
+     where battle_id=p_battle_id and user_id=v_uid
+  ) then raise exception 'この戦闘の参加者ではありません'; end if;
+
+  insert into public.online_battle_reward_claims(battle_id,user_id)
+  values(p_battle_id,v_uid)
+  on conflict (battle_id,user_id) do nothing
+  returning user_id into v_claimed;
+
+  return jsonb_build_object(
+    'granted',v_claimed is not null,
+    'xp',greatest(0,coalesce(nullif(v_battle.enemy->>'xp','')::numeric,0)),
+    'gold',greatest(0,coalesce(nullif(v_battle.enemy->>'gold','')::numeric,0)),
+    'enemy',v_battle.enemy
+  );
+end $$;
+revoke all on function public.claim_online_battle_reward(uuid) from public, anon;
+grant execute on function public.claim_online_battle_reward(uuid) to authenticated;
