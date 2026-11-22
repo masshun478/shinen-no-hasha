@@ -145,11 +145,19 @@ const platform=add(new THREE.TorusGeometry(1.02,.045,12,56),trim,0,.06,0,1,1,.48
    enemy3DGroup.add(model);
    const clips=gltf.animations||[];
    if(clips.length){
-    const mixer=new THREE.AnimationMixer(model);
+    const mixer=new THREE.AnimationMixer(model),actions={};
+    const findClip=(label)=>clips.find(c=>String(c.name||"").toLowerCase().includes(label));
+    const idleClip=findClip("idle")||findClip("stand")||findClip("breath")||clips[0];
+    const attackClip=findClip("attack")||findClip("slash")||findClip("hit");
+    const moveClip=findClip("move")||findClip("walk")||findClip("run");
+    actions.idle=mixer.clipAction(idleClip);
+    actions.idle.setLoop(THREE.LoopRepeat,Infinity).play();
+    if(attackClip){actions.attack=mixer.clipAction(attackClip);actions.attack.setLoop(THREE.LoopOnce,1);actions.attack.clampWhenFinished=true;}
+    if(moveClip)actions.move=mixer.clipAction(moveClip);
     enemy3DGroup.userData.mixer=mixer;
-    const idle=THREE.AnimationClip.findByName(clips,"idle")||clips[0];
-    mixer.clipAction(idle).play();
-   }
+    enemy3DGroup.userData.actions=actions;
+    if(actions.attack)mixer.addEventListener("finished",event=>{if(event.action===actions.attack){actions.attack.fadeOut(.12);actions.idle.reset().fadeIn(.16).play();}});
+   }else{enemy3DGroup.userData.mixer=null;enemy3DGroup.userData.actions={};}
    enemy3DGroup.userData.externalModel=true;
   };
   if(cached)installModel(cached);
