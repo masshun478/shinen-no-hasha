@@ -78,6 +78,8 @@ declare
   v_expected uuid;
   v_alive integer;
   v_damage numeric := 0;
+  v_player_damage numeric := 0;
+  v_max_player_damage numeric := 1;
   v_members jsonb;
 begin
   if auth.uid() is null then raise exception 'ログインが必要です'; end if;
@@ -104,8 +106,21 @@ begin
       raise exception 'まだあなたの行動順ではありません';
     end if;
 
+    -- Limit client-reported damage to a server-calculated ceiling based on the
+    -- participant stats stored when they joined. This is a guardrail until
+    -- character progression and equipped skills are persisted server-side.
+    v_max_player_damage:=greatest(1,floor((
+      greatest(1,coalesce(nullif(v_member.character->>'str','')::numeric,1))*2
+      + greatest(0,coalesce(nullif(v_member.character->>'spd','')::numeric,0))
+    )*6));
+    v_player_damage:=least(
+      greatest(0,coalesce(p_damage,0)),
+      v_max_player_damage,
+      greatest(0,v_battle.enemy_hp)
+    );
+
     update public.online_battles
-       set enemy_hp=greatest(0,enemy_hp-greatest(0,coalesce(p_damage,0))),updated_at=now()
+       set enemy_hp=greatest(0,enemy_hp-v_player_damage),updated_at=now()
      where id=p_battle_id returning * into v_battle;
 
     if v_battle.enemy_hp<=0 then
@@ -177,7 +192,7 @@ begin
       where battle_id=p_battle_id and user_id=auth.uid()),0),
     'target_user_id',case when v_target.user_id is null then null else v_target.user_id end,
     'target_name',case when v_target.user_id is null then null else v_target.player_name end,
-    'damage',v_damage
+    'damage',v_damage,'player_damage',v_player_damage
   );
 end $$;
 
@@ -292,8 +307,16 @@ begin
   if p_difficulty not in ('最弱','弱','普通','強','激強','最強') then
     raise exception '難易度が正しくありません';
   end if;
-  if exists(select 1 from public.online_battle_members where user_id=v_uid and left_at is null) then
-    raise exception 'すでに別のオンライン戦闘に参加しています';
+  -- Serialize joins per account and ignore completed historical memberships.
+  perform pg_advisory_xact_lock(hashtext('online-user-'||v_uid::text));
+  if exists(
+    select 1
+      from public.online_battle_members m
+      join public.online_battles b on b.id=m.battle_id
+     where m.user_id=v_uid and m.left_at is null
+       and b.status in ('recruiting','active')
+  ) then
+    raise exception 'すでに進行中のオンライン戦闘に参加しています';
   end if;
   perform pg_advisory_xact_lock(hashtext('online-battle-'||p_difficulty));
   select b.* into v_battle from public.online_battles b
