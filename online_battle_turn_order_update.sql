@@ -206,3 +206,68 @@ create unique index if not exists online_battle_one_active_room_per_user_idx
   on public.online_battle_members (user_id)
   where left_at is null;
 
+-- Correct active-room protection without blocking completed battle history.
+
+-- Correct active-room protection without blocking completed battle history.
+-- A permanent partial index on left_at is incorrect because finished members
+-- remain visible to poll_online_battle; enforce the rule under a per-user lock.
+drop index if exists public.online_battle_one_active_room_per_user_idx;
+
+create or replace function public.join_online_battle(
+  p_difficulty text,
+  p_player_name text,
+  p_character jsonb,
+  p_enemy jsonb
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, auth
+as $$
+declare
+  v_uid uuid := auth.uid();
+  v_battle public.online_battles%rowtype;
+  v_count integer;
+begin
+  if v_uid is null then raise exception 'ログインが必要です'; end if;
+  perform pg_advisory_xact_lock(hashtext('online-user-' || v_uid::text));
+  if exists (
+    select 1
+      from public.online_battle_members m
+      join public.online_battles b on b.id=m.battle_id
+     where m.user_id=v_uid
+       and m.left_at is null
+       and b.status in ('recruiting','active')
+  ) then
+    raise exception 'すでに進行中のオンライン戦闘に参加しています';
+  end if;
+
+  perform pg_advisory_xact_lock(hashtext('online-battle-' || p_difficulty));
+  select b.* into v_battle
+    from public.online_battles b
+   where b.difficulty = p_difficulty
+     and b.status = 'recruiting'
+     and b.created_at > now() - interval '30 seconds'
+     and (select count(*) from public.online_battle_members m where m.battle_id=b.id and m.left_at is null) < 5
+   order by b.created_at asc
+   limit 1 for update;
+  if not found then
+    insert into public.online_battles(difficulty, enemy, enemy_hp, enemy_max_hp)
+    values (p_difficulty, p_enemy, (p_enemy->>'hp')::numeric, (p_enemy->>'max')::numeric)
+    returning * into v_battle;
+  end if;
+  insert into public.online_battle_members(battle_id,user_id,player_name,character,hp,max_hp)
+  values(v_battle.id,v_uid,left(coalesce(nullif(p_player_name,''),'冒険者'),24),coalesce(p_character,'{}'::jsonb),
+         greatest(0,coalesce((p_character->>'hp')::numeric,1)),
+         greatest(1,coalesce((p_character->>'maxHp')::numeric,1)))
+  on conflict (battle_id,user_id) do update
+    set left_at=null, player_name=excluded.player_name, character=excluded.character;
+  select count(*) into v_count from public.online_battle_members where battle_id=v_battle.id and left_at is null;
+  if v_count >= 5 or v_battle.created_at <= now() - interval '30 seconds' then
+    update public.online_battles set status='active', started_at=coalesce(started_at,now()), updated_at=now()
+     where id=v_battle.id and status='recruiting' returning * into v_battle;
+  end if;
+  return jsonb_build_object('battle',to_jsonb(v_battle),'count',v_count);
+end $$;
+
+grant execute on function public.join_online_battle(text,text,jsonb,jsonb) to authenticated;
