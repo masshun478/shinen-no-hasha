@@ -302,8 +302,33 @@ declare
   v_catalog jsonb;
   v_pick jsonb;
   v_enemy jsonb;
+  v_saved_stats jsonb;
+  v_saved_character jsonb;
 begin
   if v_uid is null then raise exception 'ログインが必要です'; end if;
+
+  -- Read the persisted character snapshot instead of trusting battle-request stats.
+  select c.stats into v_saved_stats
+    from public.characters c
+   where c.owner_id=v_uid
+   limit 1;
+  if not found or v_saved_stats is null then
+    raise exception 'キャラクターの保存データがありません。再ログインして保存してください';
+  end if;
+  v_saved_character:=jsonb_build_object(
+    'name',coalesce(v_saved_stats->>'name',p_player_name,'冒険者'),
+    'job',coalesce((select c.job from public.characters c where c.owner_id=v_uid limit 1),'戦士'),
+    'level',greatest(1,coalesce(nullif(v_saved_stats->>'level','')::integer,1)),
+    'hp',greatest(0,coalesce(nullif(v_saved_stats->>'hp','')::numeric,1)),
+    'maxHp',greatest(1,coalesce(nullif(v_saved_stats->>'maxHp','')::numeric,1)),
+    'mp',greatest(0,coalesce(nullif(v_saved_stats->>'mp','')::numeric,0)),
+    'maxMp',greatest(0,coalesce(nullif(v_saved_stats->>'maxMp','')::numeric,0)),
+    'str',greatest(1,coalesce(nullif(v_saved_stats->>'str','')::numeric,1)),
+    'def',greatest(0,coalesce(nullif(v_saved_stats->>'def','')::numeric,0)),
+    'spd',greatest(0,coalesce(nullif(v_saved_stats->>'spd','')::numeric,0)),
+    'luck',greatest(0,coalesce(nullif(v_saved_stats->>'luck','')::numeric,0))
+  );
+
   if p_difficulty not in ('最弱','弱','普通','強','激強','最強') then
     raise exception '難易度が正しくありません';
   end if;
@@ -357,8 +382,7 @@ begin
   end if;
   insert into public.online_battle_members(battle_id,user_id,player_name,character,hp,max_hp)
   values(v_battle.id,v_uid,left(coalesce(nullif(p_player_name,''),'冒険者'),24),
-    coalesce(p_character,'{}'::jsonb),greatest(0,coalesce((p_character->>'hp')::numeric,1)),
-    greatest(1,coalesce((p_character->>'maxHp')::numeric,1)))
+    v_saved_character,(v_saved_character->>'hp')::numeric,(v_saved_character->>'maxHp')::numeric)
   on conflict(battle_id,user_id) do update
     set left_at=null,player_name=excluded.player_name,character=excluded.character,hp=excluded.hp,max_hp=excluded.max_hp;
   select count(*) into v_count from public.online_battle_members where battle_id=v_battle.id and left_at is null;
