@@ -1,4 +1,5 @@
 export default { async fetch(request) {
+  try {
   const requestUrl = new URL(request.url);
   const modelAssets = {
     "/assets/hero-samurai.glb": "https://grab3d.com/dl/samurai-rigged/samurai-rigged.glb",
@@ -29,4 +30,8 @@ export default { async fetch(request) {
   </style>`;
   if(!enhancedHtml.includes("battlePresentationV42")) enhancedHtml=enhancedHtml.replace("</head>",battlePresentation+"</head>");
   return new Response(enhancedHtml, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+  } catch (error) {
+    const detail = error && error.stack ? error.stack : String(error);
+    return new Response("Worker runtime diagnostic\\n" + detail, { status: 500, headers: { "content-type": "text/plain; charset=utf-8", "cache-control": "no-store" } });
+  }
 } };
