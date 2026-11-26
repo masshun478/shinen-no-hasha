@@ -47,7 +47,7 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v59-20261126") throw new Error("Wrong live build: " + build);
+  if (build !== "v60-20261126") throw new Error("Wrong live build: " + build);
 
   await page.waitForSelector("#routedGameRoot", { timeout: 15000 });
   await page.locator("#homeStart").click();
@@ -84,7 +84,7 @@ try {
   console.log("PASS: mobile title button opens login.");
   console.log("PASS: command row stays hidden outside battle.");
   console.log("PASS: command row moves into battle actions and becomes visible during command battle.");
-  console.log("PASS: live build marker is v59-20261126.");
+  console.log("PASS: live build marker is v60-20261126.");
 } finally {
   await browser.close();
 }
