@@ -49,7 +49,7 @@ try {
   const build = await page.locator("html").getAttribute("data-game-build");
   if (build !== "v61-20261126") throw new Error("Wrong live build: " + build);
 
-  await page.waitForSelector("#routedGameRoot", { timeout: 15000 });
+  await page.waitForSelector("#routedGameRoot", { state: "attached", timeout: 15000 });
   await page.locator("#homeStart").click();
   await page.waitForFunction(() => document.getElementById("loginPage")?.classList.contains("active"), null, { timeout: 5000 });
   const loginState = await page.evaluate(() => ({ nav: getComputedStyle(document.getElementById("gameNav")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display, login: getComputedStyle(document.getElementById("loginPage")).display }));
