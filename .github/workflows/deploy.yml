@@ -39,6 +39,11 @@ jobs:
             fi
             sleep 3
           done
+          echo "=== LIVE RESPONSE HEADERS ==="
+          cat /tmp/worker-headers
+          echo "=== LIVE RESPONSE BODY (first 2000 bytes) ==="
+          head -c 2000 /tmp/worker-body
+          echo
           grep -F 'data-game-build="v64-20261126"' /tmp/worker-body
           grep -i '^x-game-build: v64-20261126' /tmp/worker-headers
       - name: Install Playwright and Chromium
