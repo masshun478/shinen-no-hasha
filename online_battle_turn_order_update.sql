@@ -440,3 +440,7 @@ begin
 end $$;
 revoke all on function public.claim_online_battle_reward(uuid) from public, anon;
 grant execute on function public.claim_online_battle_reward(uuid) to authenticated;
+
+
+-- Refresh PostgREST's function signature cache after installing the RPC.
+notify pgrst, 'reload schema';
