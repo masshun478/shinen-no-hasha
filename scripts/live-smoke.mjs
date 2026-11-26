@@ -47,7 +47,7 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v63-20261126") throw new Error("Wrong live build: " + build);
+  if (build !== "v64-20261126") throw new Error("Wrong live build: " + build);
 
   const navLabels = await page.locator("#gameNav button").allTextContents();
   if (navLabels.some(label => /キャラクター|装備/.test(label))) throw new Error("Character/equipment navigation buttons remain: " + navLabels.join(", "));
@@ -103,7 +103,7 @@ try {
   console.log("PASS: command row stays hidden outside battle.");
   console.log("PASS: command row moves into battle actions and becomes visible during command battle.");
   console.log("PASS: character and equipment are combined in adventure; logout is the final item.");
-  console.log("PASS: live build marker is v63-20261126.");
+  console.log("PASS: live build marker is v64-20261126.");
 } finally {
   await browser.close();
 }
