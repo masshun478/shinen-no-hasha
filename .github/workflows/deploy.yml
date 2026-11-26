@@ -32,15 +32,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="https://mute-tree-13ba.masshun.workers.dev/?build=v63-20261126"
+          url="https://mute-tree-13ba.masshun.workers.dev/?build=v64-20261126"
           for attempt in 1 2 3 4 5; do
             if curl --connect-timeout 10 --max-time 30 -fsS -D /tmp/worker-headers "$url" -o /tmp/worker-body; then
               break
             fi
             sleep 3
           done
-          grep -F 'data-game-build="v63-20261126"' /tmp/worker-body
-          grep -i '^x-game-build: v63-20261126' /tmp/worker-headers
+          grep -F 'data-game-build="v64-20261126"' /tmp/worker-body
+          grep -i '^x-game-build: v64-20261126' /tmp/worker-headers
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save --package-lock=false playwright
