@@ -70,6 +70,7 @@ try {
   if (!mergedSections.character || !mergedSections.equipment || !mergedSections.logoutInAdventure || !mergedSections.skillLoadoutInSkills || !mergedSections.skillLoadoutNotInAdventure) throw new Error("Page organization failed: " + JSON.stringify(mergedSections));
 
   await page.waitForSelector("#routedGameRoot", { state: "attached", timeout: 15000 });
+  await page.locator("#dailyBonusOverlay").evaluate(el => { el.style.setProperty("display", "none", "important"); el.setAttribute("aria-hidden", "true"); }).catch(() => {});
   await page.locator("#homeStart").click();
   await page.waitForFunction(() => document.getElementById("loginPage")?.classList.contains("active"), null, { timeout: 5000 });
   const loginState = await page.evaluate(() => ({ nav: getComputedStyle(document.getElementById("gameNav")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display, login: getComputedStyle(document.getElementById("loginPage")).display }));
