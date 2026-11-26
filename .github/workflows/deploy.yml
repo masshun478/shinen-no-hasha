@@ -32,20 +32,20 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="https://mute-tree-13ba.masshun.workers.dev/?build=v60-20261126"
+          url="https://mute-tree-13ba.masshun.workers.dev/?build=v61-20261126"
           for attempt in 1 2 3 4 5; do
             if curl --connect-timeout 10 --max-time 30 -fsS -D /tmp/worker-headers "$url" -o /tmp/worker-body; then
               break
             fi
             sleep 3
           done
-          grep -F 'data-game-build="v60-20261126"' /tmp/worker-body
-          grep -i '^x-game-build: v60-20261126' /tmp/worker-headers
+          grep -F 'data-game-build="v61-20261126"' /tmp/worker-body
+          grep -i '^x-game-build: v61-20261126' /tmp/worker-headers
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save --package-lock=false playwright
           npx playwright install chromium --with-deps
       - name: Run mobile browser interaction test
         env:
-          GAME_URL: https://mute-tree-13ba.masshun.workers.dev/?smoke=v60
+          GAME_URL: https://mute-tree-13ba.masshun.workers.dev/?smoke=v61
         run: node scripts/live-smoke.mjs
