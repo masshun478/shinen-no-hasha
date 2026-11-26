@@ -60,8 +60,11 @@ try {
     document.body.classList.add("routed-active");
     document.querySelectorAll(".game-page").forEach(el => el.classList.remove("active"));
     document.getElementById("adventurePage")?.classList.add("active");
+    document.getElementById("adventurePage")?.style.setProperty("display", "block", "important");
+    document.getElementById("loginPage")?.style.setProperty("display", "none", "important");
+    document.getElementById("gameNav")?.style.setProperty("display", "flex", "important");
     const root = document.getElementById("routedGameRoot");
-    if (root) root.style.display = "block";
+    if (root) root.style.setProperty("display", "block", "important");
   });
 
   await page.waitForSelector("#battleModeSelect", { timeout: 10000 });
