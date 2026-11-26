@@ -52,8 +52,22 @@ try {
   const navLabels = await page.locator("#gameNav button").allTextContents();
   if (navLabels.some(label => /キャラクター|装備/.test(label))) throw new Error("Character/equipment navigation buttons remain: " + navLabels.join(", "));
   if (navLabels.length < 1) throw new Error("Game navigation is missing.");
-  const mergedSections = await page.evaluate(() => ({ character: [...document.querySelectorAll("#adventurePage section")].some(el => /自分のキャラクター/.test(el.textContent)), equipment: [...document.querySelectorAll("#adventurePage section")].some(el => /装備・バッグ/.test(el.textContent)), logoutLast: document.querySelector("#adventurePage")?.lastElementChild?.id === "signOutBtn" }));
-  if (!mergedSections.character || !mergedSections.equipment || !mergedSections.logoutLast) throw new Error("Adventure page merge/logout placement failed: " + JSON.stringify(mergedSections));
+  const mergedSections = await page.evaluate(() => {
+    const adventure = document.querySelector("#adventurePage");
+    const logout = document.querySelector("#signOutBtn");
+    const skills = document.querySelector("#skillsPage");
+    const loadout = document.querySelector("#skillLoadout");
+    return {
+      character: [...document.querySelectorAll("#adventurePage section")].some(el => /自分のキャラクター/.test(el.textContent)),
+      equipment: [...document.querySelectorAll("#adventurePage section")].some(el => /装備・バッグ/.test(el.textContent)),
+      logoutInAdventure: logout?.parentElement === adventure,
+      logoutLast: logout?.parentElement === adventure && logout === adventure.lastElementChild,
+      adventureChildren: [...(adventure?.children || [])].map(el => el.id || el.tagName),
+      skillLoadoutInSkills: loadout?.parentElement?.closest("#skillsPage") === skills,
+      skillLoadoutNotInAdventure: !adventure?.contains(loadout)
+    };
+  });
+  if (!mergedSections.character || !mergedSections.equipment || !mergedSections.logoutInAdventure || !mergedSections.skillLoadoutInSkills || !mergedSections.skillLoadoutNotInAdventure) throw new Error("Page organization failed: " + JSON.stringify(mergedSections));
 
   await page.waitForSelector("#routedGameRoot", { state: "attached", timeout: 15000 });
   await page.locator("#homeStart").click();
