@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v62";
+const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v63";
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
@@ -47,7 +47,13 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v62-20261126") throw new Error("Wrong live build: " + build);
+  if (build !== "v63-20261126") throw new Error("Wrong live build: " + build);
+
+  const navLabels = await page.locator("#gameNav button").allTextContents();
+  if (navLabels.some(label => /キャラクター|装備/.test(label))) throw new Error("Character/equipment navigation buttons remain: " + navLabels.join(", "));
+  if (navLabels.length < 1) throw new Error("Game navigation is missing.");
+  const mergedSections = await page.evaluate(() => ({ character: [...document.querySelectorAll("#adventurePage section")].some(el => /自分のキャラクター/.test(el.textContent)), equipment: [...document.querySelectorAll("#adventurePage section")].some(el => /装備・バッグ/.test(el.textContent)), logoutLast: document.querySelector("#adventurePage")?.lastElementChild?.id === "signOutBtn" }));
+  if (!mergedSections.character || !mergedSections.equipment || !mergedSections.logoutLast) throw new Error("Adventure page merge/logout placement failed: " + JSON.stringify(mergedSections));
 
   await page.waitForSelector("#routedGameRoot", { state: "attached", timeout: 15000 });
   await page.locator("#homeStart").click();
@@ -96,7 +102,8 @@ try {
   console.log("PASS: unauthenticated users see isolated login; authenticated users skip login and open adventure.");
   console.log("PASS: command row stays hidden outside battle.");
   console.log("PASS: command row moves into battle actions and becomes visible during command battle.");
-  console.log("PASS: live build marker is v62-20261126.");
+  console.log("PASS: character and equipment are combined in adventure; logout is the final item.");
+  console.log("PASS: live build marker is v63-20261126.");
 } finally {
   await browser.close();
 }
