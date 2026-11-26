@@ -104,7 +104,7 @@ try {
     throw new Error("Battle commands leaked onto the adventure page: " + hiddenBeforeBattle);
   }
 
-  await page.locator("#spawn").click();
+  await page.locator("#spawn").click({ force: true });
   await page.waitForFunction(() => {
     const screen = document.getElementById("battleScreen");
     const row = document.getElementById("commandActionRow");
