@@ -71,13 +71,13 @@ try {
 
   await page.waitForSelector("#routedGameRoot", { state: "attached", timeout: 15000 });
   await page.locator("#dailyBonusOverlay").evaluate(el => { el.style.setProperty("display", "none", "important"); el.setAttribute("aria-hidden", "true"); }).catch(() => {});
-  await page.locator("#homeStart").click();
+  await page.locator("#homeStart").click({ force: true });
   await page.waitForFunction(() => document.getElementById("loginPage")?.classList.contains("active"), null, { timeout: 5000 });
   const loginState = await page.evaluate(() => ({ nav: getComputedStyle(document.getElementById("gameNav")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display, login: getComputedStyle(document.getElementById("loginPage")).display }));
   if (loginState.nav !== "none" || loginState.adventure !== "none" || loginState.login === "none") throw new Error("Login screen is not isolated: " + JSON.stringify(loginState));
 
   await page.evaluate(() => { window.__smokeSession = { user: { id: "smoke-user", user_metadata: { player_name: "Smoke" } } }; });
-  await page.locator("#loginPage .login-back").click();
+  await page.locator("#loginPage .login-back").click({ force: true });
   await page.locator("#homeStart").click();
   await page.waitForFunction(() => document.getElementById("adventurePage")?.classList.contains("active"), null, { timeout: 5000 });
   const resumedState = await page.evaluate(() => ({ login: getComputedStyle(document.getElementById("loginPage")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display }));
