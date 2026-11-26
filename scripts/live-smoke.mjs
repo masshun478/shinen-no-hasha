@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v59";
+const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v61";
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
@@ -47,11 +47,13 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v60-20261126") throw new Error("Wrong live build: " + build);
+  if (build !== "v61-20261126") throw new Error("Wrong live build: " + build);
 
   await page.waitForSelector("#routedGameRoot", { timeout: 15000 });
   await page.locator("#homeStart").click();
   await page.waitForFunction(() => document.getElementById("loginPage")?.classList.contains("active"), null, { timeout: 5000 });
+  const loginState = await page.evaluate(() => ({ nav: getComputedStyle(document.getElementById("gameNav")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display, login: getComputedStyle(document.getElementById("loginPage")).display }));
+  if (loginState.nav !== "none" || loginState.adventure !== "none" || loginState.login === "none") throw new Error("Login screen is not isolated: " + JSON.stringify(loginState));
 
   await page.evaluate(() => {
     document.body.classList.remove("prelaunch");
@@ -81,10 +83,10 @@ try {
   }, null, { timeout: 12000 });
 
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
-  console.log("PASS: mobile title button opens login.");
+  console.log("PASS: mobile title button opens an isolated login screen; navigation and adventure page are hidden.");
   console.log("PASS: command row stays hidden outside battle.");
   console.log("PASS: command row moves into battle actions and becomes visible during command battle.");
-  console.log("PASS: live build marker is v60-20261126.");
+  console.log("PASS: live build marker is v61-20261126.");
 } finally {
   await browser.close();
 }
