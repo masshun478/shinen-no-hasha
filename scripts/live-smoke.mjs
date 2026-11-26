@@ -54,7 +54,7 @@ try {
   if (navLabels.length < 1) throw new Error("Game navigation is missing.");
   const mergedSections = await page.evaluate(() => {
     const adventure = document.querySelector("#adventurePage");
-    const logout = document.querySelector("#signOutBtn");
+    const logout = document.querySelector("#adventureLogoutBtn");
     const skills = document.querySelector("#skillsPage");
     const loadout = document.querySelector("#skillLoadout");
     return {
