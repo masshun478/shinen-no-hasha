@@ -83,7 +83,7 @@ html body #homeCinematic .boss-shadow{filter:drop-shadow(0 0 45px #8d21b8) drop-
 var byId=function(id){return document.getElementById(id)};
 var pageMap={},currentPage="home",battleMode="auto";
 function makePage(id,title){var el=document.createElement("section");el.className="game-page";el.id=id;var h=document.createElement("h2");h.id="pageHeader";h.textContent=title;el.appendChild(h);return el;}
-function route(id){currentPage=id;Object.keys(pageMap).forEach(function(k){pageMap[k].classList.toggle("active",k===id)});var nav=byId("gameNav");if(nav){nav.querySelectorAll("button[data-page]").forEach(function(b){b.classList.toggle("active",b.dataset.page===id)})}document.body.classList.toggle("prelaunch",id==="home");window.scrollTo({top:0,behavior:"instant"});}
+function route(id){currentPage=id;Object.keys(pageMap).forEach(function(k){pageMap[k].classList.toggle("active",k===id)});var nav=byId("gameNav");if(nav){nav.querySelectorAll("button[data-page]").forEach(function(b){b.classList.toggle("active",b.dataset.page===id)})}var home=byId("homeCinematic");if(home)home.style.display=id==="home"?"":"none";document.body.classList.toggle("prelaunch",id==="home");window.scrollTo({top:0,behavior:"instant"});}
 function initPages(){
  var home=byId("homeCinematic"),login=byId("onlinePanel"),admin=byId("adminPanel"),main=byId("gameMain");
  if(!home||!login||!main)return;
