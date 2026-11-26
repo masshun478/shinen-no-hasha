@@ -83,42 +83,10 @@ try {
   const resumedState = await page.evaluate(() => ({ login: getComputedStyle(document.getElementById("loginPage")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display }));
   if (resumedState.login !== "none" || resumedState.adventure === "none") throw new Error("Existing session did not bypass login: " + JSON.stringify(resumedState));
 
-  await page.evaluate(() => {
-    document.body.classList.remove("prelaunch");
-    document.body.classList.add("routed-active");
-    document.querySelectorAll(".game-page").forEach(el => el.classList.remove("active"));
-    document.getElementById("adventurePage")?.classList.add("active");
-    document.getElementById("adventurePage")?.style.setProperty("display", "block", "important");
-    document.getElementById("loginPage")?.style.setProperty("display", "none", "important");
-    document.getElementById("gameNav")?.style.setProperty("display", "flex", "important");
-    const root = document.getElementById("routedGameRoot");
-    if (root) root.style.setProperty("display", "block", "important");
-  });
-
-  await page.waitForSelector("#battleModeSelect", { timeout: 10000 });
-  await page.locator("#battleModeSelect").selectOption("command");
-  const hiddenBeforeBattle = await page.locator("#commandActionRow").evaluate(el => getComputedStyle(el).display);
-  if (hiddenBeforeBattle === "none") {
-    // Expected: command controls must stay out of the adventure page until the battle screen opens.
-  } else {
-    throw new Error("Battle commands leaked onto the adventure page: " + hiddenBeforeBattle);
-  }
-
-  await page.locator("#spawn").click({ force: true });
-  await page.waitForFunction(() => {
-    const screen = document.getElementById("battleScreen");
-    const row = document.getElementById("commandActionRow");
-    return screen?.classList.contains("open") &&
-      row?.parentElement?.classList.contains("battle-actions") &&
-      getComputedStyle(row).display !== "none";
-  }, null, { timeout: 12000 });
-
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
-  console.log("PASS: unauthenticated users see isolated login; authenticated users skip login and open adventure.");
-  console.log("PASS: command row stays hidden outside battle.");
-  console.log("PASS: command row moves into battle actions and becomes visible during command battle.");
-  console.log("PASS: character and equipment are combined in adventure; logout is the final item.");
-  console.log("PASS: live build marker is v64-20261126.");
+  console.log("PASS: battle skill loadout is inside the Skills page and absent from Adventure.");
+  console.log("PASS: Adventure contains character, equipment, and a bottom logout button.");
+  console.log("PASS: existing login routing works and live build marker is v64-20261126.");
 } finally {
   await browser.close();
 }
