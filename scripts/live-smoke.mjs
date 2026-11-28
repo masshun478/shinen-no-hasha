@@ -9,6 +9,8 @@ const page = await browser.newPage({
   hasTouch: true,
 });
 const pageErrors = [];
+const consoleErrors = [];
+page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
 
 page.on("pageerror", error => pageErrors.push(error.message));
 await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", route =>
@@ -46,6 +48,12 @@ await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", route =
 try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
+  try {
+    await page.waitForSelector("#gameNav", { state: "attached", timeout: 12000 });
+  } catch {
+    const html = await page.content();
+    throw new Error("Game navigation did not initialize. pageErrors=" + JSON.stringify(pageErrors) + " consoleErrors=" + JSON.stringify(consoleErrors) + " htmlStart=" + html.slice(0, 2500));
+  }
   const build = await page.locator("html").getAttribute("data-game-build");
   if (build !== "v65-20261129") throw new Error("Wrong live build: " + build);
 
