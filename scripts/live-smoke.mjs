@@ -52,7 +52,16 @@ try {
     await page.waitForSelector("#gameNav", { state: "attached", timeout: 12000 });
   } catch {
     const html = await page.content();
-    throw new Error("Game navigation did not initialize. pageErrors=" + JSON.stringify(pageErrors) + " consoleErrors=" + JSON.stringify(consoleErrors) + " htmlStart=" + html.slice(0, 2500));
+    const domState = await page.evaluate(() => ({
+      readyState: document.readyState,
+      home: !!document.getElementById("homeCinematic"),
+      login: !!document.getElementById("onlinePanel"),
+      main: !!document.getElementById("gameMain"),
+      root: !!document.getElementById("routedGameRoot"),
+      nav: !!document.getElementById("gameNav"),
+      navButtons: document.querySelectorAll("#gameNav button").length
+    }));
+    throw new Error("Game navigation did not initialize. state=" + JSON.stringify(domState) + " pageErrors=" + JSON.stringify(pageErrors) + " consoleErrors=" + JSON.stringify(consoleErrors) + " htmlStart=" + html.slice(0, 1200));
   }
   const build = await page.locator("html").getAttribute("data-game-build");
   if (build !== "v71-20261129") throw new Error("Wrong live build: " + build);
