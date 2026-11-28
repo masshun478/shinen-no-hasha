@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
 
-const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v63";
+const url = process.env.GAME_URL || "https://mute-tree-13ba.masshun.workers.dev/?smoke=v65";
 const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
 const page = await browser.newPage({
   viewport: { width: 390, height: 844 },
@@ -47,7 +47,7 @@ try {
   const response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 45000 });
   if (!response || response.status() !== 200) throw new Error("Game page did not return HTTP 200.");
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v64-20261126") throw new Error("Wrong live build: " + build);
+  if (build !== "v65-20261129") throw new Error("Wrong live build: " + build);
 
   const navLabels = await page.locator("#gameNav button").allTextContents();
   if (navLabels.some(label => /キャラクター|装備/.test(label))) throw new Error("Character/equipment navigation buttons remain: " + navLabels.join(", "));
@@ -83,10 +83,33 @@ try {
   const resumedState = await page.evaluate(() => ({ login: getComputedStyle(document.getElementById("loginPage")).display, adventure: getComputedStyle(document.getElementById("adventurePage")).display }));
   if (resumedState.login !== "none" || resumedState.adventure === "none") throw new Error("Existing session did not bypass login: " + JSON.stringify(resumedState));
 
+  const rareEncounter = await page.evaluate(() => {
+    if (typeof window.spawn !== "function") return { available: false };
+    const difficulty = document.getElementById("diff");
+    if (!difficulty) return { available: false, reason: "difficulty selector missing" };
+    difficulty.value = "最弱";
+    const originalRandom = Math.random;
+    const originalSetInterval = window.setInterval;
+    Math.random = () => 0;
+    window.setInterval = () => 1;
+    try { window.spawn(); } finally { Math.random = originalRandom; window.setInterval = originalSetInterval; }
+    return {
+      available: true,
+      singleRare: document.getElementById("battleEnemyTitle")?.textContent.includes("RARE MONSTER") &&
+        document.getElementById("battleEnemySprite")?.textContent.includes("🦇") &&
+        !/ほか\\d+体/.test(document.getElementById("enemy")?.textContent || ""),
+      alertBanner: !!document.querySelector("#battleScreen .rare-alert-banner"),
+      rareMode: document.getElementById("battleScreen")?.classList.contains("rare-battle")
+    };
+  });
+  if (!rareEncounter.available || !rareEncounter.singleRare || !rareEncounter.alertBanner || !rareEncounter.rareMode) {
+    throw new Error("Rare encounter presentation failed: " + JSON.stringify(rareEncounter));
+  }
+
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   console.log("PASS: battle skill loadout is inside the Skills page and absent from Adventure.");
   console.log("PASS: Adventure contains character, equipment, and a bottom logout button.");
-  console.log("PASS: existing login routing works and live build marker is v64-20261126.");
+  console.log("PASS: existing login routing works and live build marker is v65-20261129.");
 } finally {
   await browser.close();
 }
