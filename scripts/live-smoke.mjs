@@ -55,7 +55,7 @@ try {
     throw new Error("Game navigation did not initialize. pageErrors=" + JSON.stringify(pageErrors) + " consoleErrors=" + JSON.stringify(consoleErrors) + " htmlStart=" + html.slice(0, 2500));
   }
   const build = await page.locator("html").getAttribute("data-game-build");
-  if (build !== "v70-20261129") throw new Error("Wrong live build: " + build);
+  if (build !== "v71-20261129") throw new Error("Wrong live build: " + build);
 
   const navLabels = await page.locator("#gameNav button").allTextContents();
   if (navLabels.some(label => /キャラクター|装備/.test(label))) throw new Error("Character/equipment navigation buttons remain: " + navLabels.join(", "));
@@ -117,7 +117,7 @@ try {
   if (pageErrors.length) throw new Error("Browser runtime errors: " + pageErrors.join(" | "));
   console.log("PASS: battle skill loadout is inside the Skills page and absent from Adventure.");
   console.log("PASS: Adventure contains character, equipment, and a bottom logout button.");
-  console.log("PASS: existing login routing works and live build marker is v70-20261129.");
+  console.log("PASS: existing login routing works and live build marker is v71-20261129.");
 } finally {
   await browser.close();
 }
