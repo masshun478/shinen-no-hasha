@@ -12,7 +12,7 @@ const pageErrors = [];
 const consoleErrors = [];
 page.on("console", message => { if (message.type() === "error") consoleErrors.push(message.text()); });
 
-page.on("pageerror", error => pageErrors.push(error.message));
+page.on("pageerror", error => pageErrors.push(error.stack || error.message));
 await page.route("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2", route =>
   route.fulfill({
     contentType: "application/javascript",
