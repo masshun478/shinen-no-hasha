@@ -32,7 +32,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          url="https://mute-tree-13ba.masshun.workers.dev/?build=v67-20261129"
+          url="https://mute-tree-13ba.masshun.workers.dev/?build=v68-20261129"
           for attempt in 1 2 3 4 5; do
             if curl --connect-timeout 10 --max-time 30 -fsS -D /tmp/worker-headers "$url" -o /tmp/worker-body; then
               break
@@ -44,8 +44,8 @@ jobs:
           echo "=== LIVE RESPONSE BODY (first 2000 bytes) ==="
           head -c 2000 /tmp/worker-body
           echo
-          grep -F 'data-game-build="v67-20261129"' /tmp/worker-body
-          grep -i '^x-game-build: v67-20261129' /tmp/worker-headers
+          grep -F 'data-game-build="v68-20261129"' /tmp/worker-body
+          grep -i '^x-game-build: v68-20261129' /tmp/worker-headers
       - name: Install Playwright and Chromium
         run: |
           npm install --no-save --package-lock=false playwright
